@@ -10,7 +10,6 @@ def scrolldown():
 		ui.write(e.EV_REL, e.REL_WHEEL, -100000)
 		ui.syn()
 
-#TODO make capabilities work for any keystroke
 def press_key(KEY='KEY_ENTER'):
 	capabilities = {
     	e.EV_REL : (e.REL_X, e.REL_Y, e.REL_WHEEL), 
