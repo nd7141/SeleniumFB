@@ -9,8 +9,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
-from selenium.webdriver import ActionChains
-import time, getpass, os
+from selenium.webdriver.common.action_chains import ActionChains
+import time, getpass, os, sys
 from devcontrol import *
 
 # fb_email = raw_input("Please, enter your facebook email: ")
@@ -24,7 +24,7 @@ BORN_XPATH1 = '//*[@id="pagelet_timeline_wayback"]/div/div[1]/div[1]/div/div/h3'
 BORN_XPATH2 = '//*[@id="pagelet_timeline_wayback"]/div[2]/div[1]/div[1]/div/div/h3'
 SLEEP = 3
 SCROLLS = 10000
-max_time = 10 # 30 minutes for a user
+max_time = 5 # 30 minutes for a user
 
 # read names of fb users from txt file (a user per line)
 def read_usernames(filename):
@@ -45,23 +45,39 @@ def check_exists_by_xpath(xpath):
         return False
     return True
 
+def scroll_down(driver):
+    driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+
+def save_page2(driver):
+    # press ctrl+s
+    saveas = ActionChains(driver).key_down(Keys.CONTROL)\
+         .send_keys('s').key_up(Keys.CONTROL)
+    saveas.perform()
+    print 'Pressed ctrl+s'
+    # time.sleep(1)
+    # # press enter
+    # saveas = ActionChains(driver).key_down(Keys.RETURN).key_up(Keys.RETURN)
+    # saveas.perform()
+    # print 'pressed enter'
+
+# get a browser
 fp=webdriver.FirefoxProfile()
 #fp.add_extension(extension='/home/lefteris/.mozilla/firefox/mwad0hks.default/extensions/accessext@cita.uiuc.edu.xpi')
 browser = webdriver.Firefox(firefox_profile=fp)
 browser.set_window_size(800,600)
 
+# go to facebook page
 time.sleep(15)
 browser.get('http://www.facebook.com')
-try:
-    element = WebDriverWait(browser, 20).until(
-    EC.presence_of_element_located((By.XPATH, '//*[@id="email"]'))
-    )
-finally:
-    browser.find_element_by_xpath('//*[@id="email"]').send_keys(fb_email)
 
-
+# login to the page
+element = WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH, '//*[@id="email"]')))
+browser.find_element_by_xpath('//*[@id="email"]').send_keys(fb_email)
 browser.find_element_by_xpath('//*[@id="pass"]').send_keys(fb_password)
-press_key()
+element.send_keys(Keys.RETURN)
+# press_key()
+# print "Pressed Enter"
+# sys.exit()
 time.sleep(SLEEP)
 
 
@@ -70,22 +86,32 @@ for user in users:
     try:
         print "User: ", user
 
+        # find a search box
         time.sleep(SLEEP)
         if check_exists_by_xpath('//*[@id="u_0_d"]/div[3]') :
             print 1
-            browser.find_element_by_xpath('//*[@id="u_0_d"]/div[3]').send_keys("%s" %user.decode("utf-8"))
+            e = browser.find_element_by_xpath('//*[@id="u_0_d"]/div[3]')
         elif check_exists_by_xpath('//*[@id="u_0_c"]/div[3]'):
             print 2
-            browser.find_element_by_xpath('//*[@id="u_0_c"]/div[3]').send_keys("%s" %user.decode("utf-8"))
+            e = browser.find_element_by_xpath('//*[@id="u_0_c"]/div[3]')
         elif    check_exists_by_xpath('//*[@id="u_0_e"]/div[3]'):
             print 3
-            browser.find_element_by_xpath('//*[@id="u_0_e"]/div[3]').send_keys("%s" %user.decode("utf-8"))
+            e = browser.find_element_by_xpath('//*[@id="u_0_e"]/div[3]')
         else:
             continue
+
+        # type user name and press enter
         time.sleep(SLEEP)
-        press_key()
+        e.send_keys("%s" %user.decode("utf-8"))
+        e.send_keys(Keys.RETURN)
+        # press_key()
+
+        # scroll down the page
         time.sleep(SLEEP)
-        scrolldown()
+        scroll_down(browser)
+        # browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+        # scrolldown()
+        # sys.exit()
 
         if check_exists_by_xpath("//*[contains(text(), 'Posts')]"):
             continue
@@ -94,7 +120,7 @@ for user in users:
         time_passed = time.time() - user_start
 
         while not (check_exists_by_xpath(BORN_XPATH1) or check_exists_by_xpath(BORN_XPATH2) or time_passed > max_time):
-            scrolldown()
+            scroll_down(browser)
             time.sleep(SLEEP)
             while check_exists_by_xpath("//*[contains(text(), 'more comment')]") or time_passed <= max_time:
                 print "FOUND view more comments"
@@ -103,17 +129,23 @@ for user in users:
                 time.sleep(SLEEP)
                 time_passed = time.time() - user_start
                 print 'Time left: ', max_time - time_passed
-        save_page(user)
+        save_page2(browser)
+        print 'Saved page'
+        # save_page(user)
         time.sleep(SLEEP)
 
     except TimeoutException:
         print "PAGE LOAD TIMEOUT"
-        save_page(user)
+        save_page2(browser)
+        print 'Saved page'
+        # save_page(user)
         time.sleep(SLEEP)
         continue
     except Exception, e:
         print 'ENCOUNTERED UNKNOWN ERROR'
-        save_page(user)
+        save_page2(browser)
+        print 'Saved page'
+        # save_page(user)
         time.sleep(SLEEP)
         print e
         continue
