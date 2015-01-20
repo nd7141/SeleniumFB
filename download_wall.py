@@ -1,7 +1,6 @@
 # -- coding: utf-8 --
 
 # from fb_credentials import *
-# from SendKeys import SendKeys
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,6 +11,17 @@ from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 import time, getpass, os, sys
 from devcontrol import *
+
+# overwrite press_key() in case of Windows or Mac
+if not sys.platform.startswith("linux"):
+    try:
+        import SendKeys
+        print '-----------------------------------------'
+        print "Overwrite press_key function"
+        press_key = lambda: SendKeys.SendKeys("{ENTER}")
+    except ImportError, e:
+        print "You have to install SendKeys library: http://www.lfd.uci.edu/~gohlke/pythonlibs/#sendkeys"
+        raise e
 
 # fb_email = raw_input("Please, enter your facebook email: ")
 fb_email = "ivanovserg990@gmail.com"
@@ -24,7 +34,7 @@ BORN_XPATH1 = '//*[@id="pagelet_timeline_wayback"]/div/div[1]/div[1]/div/div/h3'
 BORN_XPATH2 = '//*[@id="pagelet_timeline_wayback"]/div[2]/div[1]/div[1]/div/div/h3'
 SLEEP = 3
 SCROLLS = 10000
-max_time = 5 # 30 minutes for a user
+max_time = 5 # in seconds
 
 # read names of fb users from txt file (a user per line)
 def read_usernames(filename):
@@ -54,11 +64,9 @@ def save_page2(driver):
          .send_keys('s').key_up(Keys.CONTROL)
     saveas.perform()
     print 'Pressed ctrl+s'
-    # time.sleep(1)
-    # # press enter
-    # saveas = ActionChains(driver).key_down(Keys.RETURN).key_up(Keys.RETURN)
-    # saveas.perform()
-    # print 'pressed enter'
+    # press enter
+    press_key()
+    print 'pressed enter'
 
 # get a browser
 fp=webdriver.FirefoxProfile()
@@ -67,7 +75,7 @@ browser = webdriver.Firefox(firefox_profile=fp)
 browser.set_window_size(800,600)
 
 # go to facebook page
-time.sleep(15)
+time.sleep(10)
 browser.get('http://www.facebook.com')
 
 # login to the page
@@ -130,21 +138,21 @@ for user in users:
                 time_passed = time.time() - user_start
                 print 'Time left: ', max_time - time_passed
         save_page2(browser)
-        print 'Saved page'
+        print 'Saved page 1'
         # save_page(user)
         time.sleep(SLEEP)
 
     except TimeoutException:
         print "PAGE LOAD TIMEOUT"
         save_page2(browser)
-        print 'Saved page'
+        print 'Saved page 2'
         # save_page(user)
         time.sleep(SLEEP)
         continue
     except Exception, e:
         print 'ENCOUNTERED UNKNOWN ERROR'
         save_page2(browser)
-        print 'Saved page'
+        print 'Saved page 3'
         # save_page(user)
         time.sleep(SLEEP)
         print e
