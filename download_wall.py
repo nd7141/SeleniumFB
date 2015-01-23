@@ -10,19 +10,9 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
 import time, getpass, os, sys
-from devcontrol import *
 
-# overwrite press_key() in case of Windows or Mac
-if not sys.platform.startswith("linux"):
-    try:
-        import SendKeys
-        print '-----------------------------------------'
-        print "Overwrite press_key function"
-        press_key = lambda: SendKeys.SendKeys("{ENTER}")
-    except ImportError, e:
-        print "You have to install SendKeys library: http://www.lfd.uci.edu/~gohlke/pythonlibs/#sendkeys"
-        raise e
 
+# ------------------- CONSTANTS -------------------- #
 # fb_email = raw_input("Please, enter your facebook email: ")
 fb_email = "ivanovserg990@gmail.com"
 fb_password = getpass.getpass("Please, enter your facebook password: ")
@@ -35,6 +25,21 @@ BORN_XPATH2 = '//*[@id="pagelet_timeline_wayback"]/div[2]/div[1]/div[1]/div/div/
 SLEEP = 3
 SCROLLS = 10000
 max_time = 5 # in seconds
+
+
+# --------------------- FUNCTIONALITY ----------------------- #
+# overwrite press_key() in case of Windows or Mac
+if not sys.platform.startswith("linux"):
+    try:
+        import SendKeys
+        print '-----------------------------------------'
+        print "Overwrite press_key function"
+        press_key = lambda: SendKeys.SendKeys("{ENTER}")
+    except ImportError, e:
+        print "You have to install SendKeys library: http://www.lfd.uci.edu/~gohlke/pythonlibs/#sendkeys"
+        raise e
+else:
+    from devcontrol import *
 
 # read names of fb users from txt file (a user per line)
 def read_usernames(filename):
@@ -65,95 +70,99 @@ def save_page2(driver):
     saveas.perform()
     print 'Pressed ctrl+s'
     # press enter
+    time.sleep(1)
     press_key()
     print 'pressed enter'
 
-# get a browser
-fp=webdriver.FirefoxProfile()
-#fp.add_extension(extension='/home/lefteris/.mozilla/firefox/mwad0hks.default/extensions/accessext@cita.uiuc.edu.xpi')
-browser = webdriver.Firefox(firefox_profile=fp)
-browser.set_window_size(800,600)
 
-# go to facebook page
-time.sleep(10)
-browser.get('http://www.facebook.com')
+# ------------------------ EXECUTION ----------------------- #
+if __name__ == "__main__":
+    # get a browser
+    fp=webdriver.FirefoxProfile()
+    #fp.add_extension(extension='/home/lefteris/.mozilla/firefox/mwad0hks.default/extensions/accessext@cita.uiuc.edu.xpi')
+    browser = webdriver.Firefox(firefox_profile=fp)
+    browser.set_window_size(800,600)
 
-# login to the page
-element = WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH, '//*[@id="email"]')))
-browser.find_element_by_xpath('//*[@id="email"]').send_keys(fb_email)
-browser.find_element_by_xpath('//*[@id="pass"]').send_keys(fb_password)
-element.send_keys(Keys.RETURN)
-# press_key()
-# print "Pressed Enter"
-# sys.exit()
-time.sleep(SLEEP)
+    # go to facebook page
+    time.sleep(10)
+    browser.get('http://www.facebook.com')
+
+    # login to the page
+    element = WebDriverWait(browser, 20).until(EC.presence_of_element_located((By.XPATH, '//*[@id="email"]')))
+    browser.find_element_by_xpath('//*[@id="email"]').send_keys(fb_email)
+    browser.find_element_by_xpath('//*[@id="pass"]').send_keys(fb_password)
+    element.send_keys(Keys.RETURN)
+    # press_key()
+    # print "Pressed Enter"
+    # sys.exit()
+    time.sleep(SLEEP)
 
 
-for user in users:
-    #browser.delete_all_cookies()
-    try:
-        print "User: ", user
+    for user in users:
+        #browser.delete_all_cookies()
+        try:
+            print "User: ", user
 
-        # find a search box
-        time.sleep(SLEEP)
-        if check_exists_by_xpath('//*[@id="u_0_d"]/div[3]') :
-            print 1
-            e = browser.find_element_by_xpath('//*[@id="u_0_d"]/div[3]')
-        elif check_exists_by_xpath('//*[@id="u_0_c"]/div[3]'):
-            print 2
-            e = browser.find_element_by_xpath('//*[@id="u_0_c"]/div[3]')
-        elif    check_exists_by_xpath('//*[@id="u_0_e"]/div[3]'):
-            print 3
-            e = browser.find_element_by_xpath('//*[@id="u_0_e"]/div[3]')
-        else:
-            continue
-
-        # type user name and press enter
-        time.sleep(SLEEP)
-        e.send_keys("%s" %user.decode("utf-8"))
-        e.send_keys(Keys.RETURN)
-        # press_key()
-
-        # scroll down the page
-        time.sleep(SLEEP)
-        scroll_down(browser)
-        # browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-        # scrolldown()
-        # sys.exit()
-
-        if check_exists_by_xpath("//*[contains(text(), 'Posts')]"):
-            continue
-
-        user_start = time.time()
-        time_passed = time.time() - user_start
-
-        while not (check_exists_by_xpath(BORN_XPATH1) or check_exists_by_xpath(BORN_XPATH2) or time_passed > max_time):
-            scroll_down(browser)
+            # find a search box
             time.sleep(SLEEP)
-            while check_exists_by_xpath("//*[contains(text(), 'more comment')]") or time_passed <= max_time:
-                print "FOUND view more comments"
-                browser.find_element_by_xpath("//*[contains(text(), 'more comment')]").click()
-                print "CLICKED view more comments"
-                time.sleep(SLEEP)
-                time_passed = time.time() - user_start
-                print 'Time left: ', max_time - time_passed
-        save_page2(browser)
-        print 'Saved page 1'
-        # save_page(user)
-        time.sleep(SLEEP)
+            if check_exists_by_xpath('//*[@id="u_0_d"]/div[3]') :
+                print 1
+                e = browser.find_element_by_xpath('//*[@id="u_0_d"]/div[3]')
+            elif check_exists_by_xpath('//*[@id="u_0_c"]/div[3]'):
+                print 2
+                e = browser.find_element_by_xpath('//*[@id="u_0_c"]/div[3]')
+            elif    check_exists_by_xpath('//*[@id="u_0_e"]/div[3]'):
+                print 3
+                e = browser.find_element_by_xpath('//*[@id="u_0_e"]/div[3]')
+            else:
+                continue
 
-    except TimeoutException:
-        print "PAGE LOAD TIMEOUT"
-        save_page2(browser)
-        print 'Saved page 2'
-        # save_page(user)
-        time.sleep(SLEEP)
-        continue
-    except Exception, e:
-        print 'ENCOUNTERED UNKNOWN ERROR'
-        save_page2(browser)
-        print 'Saved page 3'
-        # save_page(user)
-        time.sleep(SLEEP)
-        print e
-        continue
+            # type user name and press enter
+            time.sleep(SLEEP)
+            e.send_keys("%s" %user.decode("utf-8"))
+            e.send_keys(Keys.RETURN)
+            # press_key()
+
+            # scroll down the page
+            time.sleep(SLEEP)
+            scroll_down(browser)
+            # browser.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+            # scrolldown()
+            # sys.exit()
+
+            if check_exists_by_xpath("//*[contains(text(), 'Posts')]"):
+                continue
+
+            user_start = time.time()
+            time_passed = time.time() - user_start
+
+            while not (check_exists_by_xpath(BORN_XPATH1) or check_exists_by_xpath(BORN_XPATH2) or time_passed > max_time):
+                scroll_down(browser)
+                time.sleep(SLEEP)
+                while check_exists_by_xpath("//*[contains(text(), 'more comment')]") or time_passed <= max_time:
+                    print "FOUND view more comments"
+                    browser.find_element_by_xpath("//*[contains(text(), 'more comment')]").click()
+                    print "CLICKED view more comments"
+                    time.sleep(SLEEP)
+                    time_passed = time.time() - user_start
+                    print 'Time left: ', max_time - time_passed
+            save_page2(browser)
+            print 'Saved page 1'
+            # save_page(user)
+            time.sleep(SLEEP)
+
+        except TimeoutException:
+            print "PAGE LOAD TIMEOUT"
+            save_page2(browser)
+            print 'Saved page 2'
+            # save_page(user)
+            time.sleep(SLEEP)
+            continue
+        except Exception, e:
+            print 'ENCOUNTERED UNKNOWN ERROR'
+            save_page2(browser)
+            print 'Saved page 3'
+            # save_page(user)
+            time.sleep(SLEEP)
+            print e
+            continue
