@@ -68,11 +68,11 @@ def extract_posts(text):
 def get_likes(snippet):
     number_of_likes = 0
     previous_line = ""
+    # TODO handle htpps links in twitter; post 9 nikita pestrov
     for line in snippet:
-        # TODO add handling you case
-        # if "You" or "you" in line:
-        #     print line
-        #     number_of_likes += 1
+        if "You" in line or "you" in line:
+            print line
+            number_of_likes += 1
         if "<http" in line:
             number_of_likes += 1
         if "people" in line or "others" in line:
@@ -83,14 +83,22 @@ def get_likes(snippet):
                         number_of_likes += int(splitted[idx - 1])
                     else:
                         number_of_likes += int(previous_line.split()[-1])
-                    break
+        # print line, number_of_likes
+        if "like this." in line or "likes this." in line:
+            break
+        if "this." in line:
+            if "like" == previous_line.split(">")[-1] or "likes" == previous_line.split(">")[-1]:
+                break
         previous_line = line
+    else:
+        number_of_likes = 0
     return number_of_likes
 
 def get_like_snippet(post):
     post = post.split("\n")
     second = False
     likes_snippet_start = False
+    start_likes = 0
     for idx, line in enumerate(post):
         if "ike <#> ·" in line:
             start_likes = idx
@@ -98,6 +106,7 @@ def get_like_snippet(post):
         elif "*" in line and likes_snippet_start:
             if not second:
                 second = True
+                start_likes = idx
             else:
                 end_likes = idx
                 # print start_likes, end_likes
@@ -111,7 +120,7 @@ def get_like_snippet(post):
 
 if __name__ == "__main__":
 
-    with open("dump_folder/my_friends_walls/Roman Prilepskiy.html") as f:
+    with open("dump_folder/my_friends_walls/Никита Пестров.html") as f:
         # text = [line for line in f]
         text = []
         for line in f:
@@ -130,6 +139,7 @@ if __name__ == "__main__":
     for idx, post in enumerate(posts):
         print post
         snippet = get_like_snippet(post)
+        # print "\n".join(snippet)
         print "Post %s has %s likes" %(idx + 1, get_likes(snippet))
         print '*************************'
         print
