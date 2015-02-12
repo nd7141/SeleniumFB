@@ -94,6 +94,35 @@ def get_likes(snippet):
         number_of_likes = 0
     return number_of_likes
 
+#TODO transform date to datetime object
+def get_date_and_link(post):
+    post_spl = post.split("\n")
+    prev_line = ""
+    for line in post_spl:
+        if line.startswith("    //"):
+            try:
+                link_idx1 = prev_line.index("<") + 1
+                link_idx2 = prev_line.index(">")
+                link = "https://facebook.com" + prev_line[link_idx1:link_idx2]
+            except ValueError:
+                print "Cannot find link for a post"
+                link = ""
+            try:
+                line_strpd = prev_line.strip()
+                date_idx = line_strpd.index("<")
+                date = line_strpd[:date_idx]
+            except ValueError:
+                print "Cannot find date for a post"
+                date = ""
+            return date, link
+        else:
+            prev_line = line
+    else:
+        print "Cannot find date and link..."
+        return "", ""
+
+
+
 def get_like_snippet(post):
     post = post.split("\n")
     second = False
@@ -120,7 +149,7 @@ def get_like_snippet(post):
 
 if __name__ == "__main__":
 
-    with open("dump_folder/my_friends_walls/Никита Пестров.html") as f:
+    with open("dump_folder/my_friends_walls/Анатолий Коротков.html") as f:
         # text = [line for line in f]
         text = []
         for line in f:
@@ -138,12 +167,15 @@ if __name__ == "__main__":
     posts = extract_posts(text)
     for idx, post in enumerate(posts):
         print post
+        date, link = get_date_and_link(post)
+        print "The date is: ", date
+        print "The link is: ", link
         snippet = get_like_snippet(post)
-        # print "\n".join(snippet)
+    #     # print "\n".join(snippet)
         print "Post %s has %s likes" %(idx + 1, get_likes(snippet))
         print '*************************'
         print
-    # snippet = get_like_snippet(post)
-    # print get_likes(snippet)
+
+    # get_date(posts[1])
 
     console = []
