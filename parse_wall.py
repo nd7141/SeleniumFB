@@ -68,10 +68,8 @@ def extract_posts(text):
 def get_likes(snippet):
     number_of_likes = 0
     previous_line = ""
-    # TODO handle htpps links in twitter; post 9 nikita pestrov
     for line in snippet:
         if "You" in line or "you" in line:
-            print line
             number_of_likes += 1
         if "<http" in line:
             number_of_likes += 1
@@ -95,6 +93,7 @@ def get_likes(snippet):
     return number_of_likes
 
 #TODO transform date to datetime object
+#TODO check is it works for other walls
 def get_date_and_link(post):
     post_spl = post.split("\n")
     prev_line = ""
@@ -115,11 +114,42 @@ def get_date_and_link(post):
                 print "Cannot find date for a post"
                 date = ""
             return date, link
-        else:
-            prev_line = line
+        elif line.startswith("    <https://www.facebook.com/photo.php?"):
+            try:
+                link_idx1 = line.index("<") + 1
+                link_idx2 = line.index(">")
+                link = line[link_idx1:link_idx2]
+                date = prev_line
+            except ValueError:
+                print "Cannot find link for a post"
+                link = ""
+                date = ""
+            return date, link
+        prev_line = line
     else:
         print "Cannot find date and link..."
         return "", ""
+
+def get_author_page(post, author):
+    post_spl = post.split("\n")
+    for i, line in enumerate(post_spl):
+        if author in line:
+            try:
+                idx1 = line.index("<") + 1
+                idx2 = line.index(">")
+                return line[idx1:idx2]
+            except ValueError:
+                next_line = post_spl[i+1]
+                try:
+                    idx1 = next_line.index("<") + 1
+                    idx2 = next_line.index(">")
+                    return next_line[idx1:idx2]
+                except ValueError:
+                    print "Cannot find a page link..."
+                    return ""
+    else:
+        print "Cannot find a page link..."
+        return ""
 
 
 
@@ -149,7 +179,9 @@ def get_like_snippet(post):
 
 if __name__ == "__main__":
 
-    with open("dump_folder/my_friends_walls/Анатолий Коротков.html") as f:
+    author = "Никита Пестров"
+
+    with open("dump_folder/my_friends_walls/%s.html" %(author)) as f:
         # text = [line for line in f]
         text = []
         for line in f:
@@ -168,8 +200,10 @@ if __name__ == "__main__":
     for idx, post in enumerate(posts):
         print post
         date, link = get_date_and_link(post)
+        page = get_author_page(post, author)
         print "The date is: ", date
         print "The link is: ", link
+        print "The page is: ", page
         snippet = get_like_snippet(post)
     #     # print "\n".join(snippet)
         print "Post %s has %s likes" %(idx + 1, get_likes(snippet))
