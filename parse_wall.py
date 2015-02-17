@@ -1,6 +1,8 @@
 # -- coding: utf-8 --
 from __future__ import division
-import os
+import os, re
+from datetime import datetime
+from dateutil import parser
 
 def find_beginning_of_posts(text):
     flag1 = False
@@ -109,7 +111,7 @@ def get_date_and_link(post):
             try:
                 line_strpd = prev_line.strip()
                 date_idx = line_strpd.index("<")
-                date = line_strpd[:date_idx]
+                date = parser.parse(line_strpd[:date_idx])
             except ValueError:
                 print "Cannot find date for a post"
                 date = ""
@@ -119,7 +121,7 @@ def get_date_and_link(post):
                 link_idx1 = line.index("<") + 1
                 link_idx2 = line.index(">")
                 link = line[link_idx1:link_idx2]
-                date = prev_line
+                date = parser.parse(prev_line)
             except ValueError:
                 print "Cannot find link for a post"
                 link = ""
@@ -129,6 +131,48 @@ def get_date_and_link(post):
     else:
         print "Cannot find date and link..."
         return "", ""
+
+def get_date_and_link2(post):
+    post_spl = post.split("\n")
+    pattern = re.compile(r'(January|February|March|April|May|June|July|August|September|October|November|December) \d')
+    for i, line in enumerate(post_spl):
+        substr = re.search(pattern, line)
+        if substr:
+            try:
+                idx1 = line.index("<") + 1
+                idx2 = line.index(">")
+                link = "https://facebook.com" + line[idx1:idx2]
+                if link.startswith("/"):
+                    link = "https://facebook.com" + link
+                date = parser.parse(line[:idx1 - 1])
+                return date, link
+            except ValueError:
+                date = parser.parse(line[substr.start():])
+                if date > datetime.now():
+                    date = date.replace(year = date.year - 1)
+                next_line = post_spl[i+1]
+                try:
+                    idx1 = next_line.index("<") + 1
+                    idx2 = next_line.index(">")
+                    link = next_line[idx1:idx2]
+                    if link.startswith("/"):
+                        link = "https://facebook.com" + link
+                    return date, link
+                except ValueError:
+                    print "Cannot find link..."
+                    link = ""
+                    return date, link
+            except:
+                print "Cannot parse datetime..."
+                print "Cannot find date and link..."
+                date = ""
+                link = ""
+                return date, link
+    else:
+        print "Cannot find date and link..."
+        date = ""
+        link = ""
+        return date, link
 
 def get_author_page(post, author):
     post_spl = post.split("\n")
@@ -150,8 +194,6 @@ def get_author_page(post, author):
     else:
         print "Cannot find a page link..."
         return ""
-
-
 
 def get_like_snippet(post):
     post = post.split("\n")
@@ -180,6 +222,8 @@ def get_like_snippet(post):
 if __name__ == "__main__":
 
     author = "Никита Пестров"
+    author = "Roman Prilepskiy"
+    author = "Анатолий Коротков"
 
     with open("dump_folder/my_friends_walls/%s.html" %(author)) as f:
         # text = [line for line in f]
@@ -199,7 +243,7 @@ if __name__ == "__main__":
     posts = extract_posts(text)
     for idx, post in enumerate(posts):
         print post
-        date, link = get_date_and_link(post)
+        date, link = get_date_and_link2(post)
         page = get_author_page(post, author)
         print "The date is: ", date
         print "The link is: ", link
